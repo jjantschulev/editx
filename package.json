@@ -1,0 +1,28 @@
+{
+  "name": "editx",
+  "version": "0.1.0",
+  "description": "Simple but powerful text and code editor for the console.",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kraken22/editx.git"
+  },
+  "keywords": [
+    "CODE",
+    "EDITOR",
+    "TEXT"
+  ],
+  "author": "Jordan Jantschulev <j.jantschulev@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kraken22/editx/issues"
+  },
+  "bin": {
+    "editx": "./main.js"
+  },
+  "homepage": "https://github.com/kraken22/editx#readme",
+  "dependencies": {}
+}
