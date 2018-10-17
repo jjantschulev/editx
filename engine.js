@@ -256,7 +256,6 @@ funcs.init = function (s, d, k, f, customRepaint) {
     process.stdin.resume();
 
     process.stdin.on("keypress", (str, key) => { // The event listener only needs to be set once. Not every frame in draw. 
-        if (str === '\u0003') funcs.exit();
         if (keyPressed) keyPressed(key);
     })
 

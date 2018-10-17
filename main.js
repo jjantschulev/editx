@@ -4,12 +4,18 @@ const engine = require('./engine.js');
 
 const sideBarWidth = 5;
 const navHeight = 2;
-
-var filename = process.argv[2];
+process.argv = process.argv.slice(2);
+var filename = process.argv[0];
 if (!fs.existsSync(filename)) {
     console.warn('Error! That file does not exist.');
     process.exit();
 }
+// Get file extension
+var syntax = '';
+var codeExtensions = "js java cs ts json"
+codeExtensions = codeExtensions.split(' ');
+var fileExtension = filename.indexOf('.') != -1 ? filename.slice(filename.indexOf('.') + 1) : "";
+if (codeExtensions.indexOf(fileExtension) != -1) syntax = fileExtension;
 
 var modified = false;
 var notSavedWarning = false;
@@ -64,7 +70,8 @@ const draw = function () {
             engine.fillForeground('yellow');
             engine.drawText((sideBarWidth - 1) - lineNum.toString().length, y, lineNum.toString());
             engine.fillForeground('white');
-            engine.drawText(sideBarWidth, y, lines[index].toString());
+            var line = lines[index].toString();
+            renderLine(line, y);
         }
     }
     engine.setCursor(cursorPosX + sideBarWidth, cursorPosY - scrollY + navHeight);
@@ -209,11 +216,88 @@ function updateScrollY() {
 
 }
 
+function renderLine(line, y) {
+    if (syntax != '') {
+        let isString = false;
+        let isNumber = false;
+        let isKeyword = false;
+        let isComment = false;
+        let numbers = "1234567890."
+        let keywords = "var if else function let for throw => while"
+        keywords = keywords.split(' ');
+        let wordBreakChars = '() =!+;,';
+        wordBreakChars = wordBreakChars.split('');
+        let cyanChars = '=+-/*<>%!'
+        cyanChars = cyanChars.split('');
+
+        for (let x = 0; x < line.length; x++) {
+
+            let justSetString = false;
+            if (line[x] == '"' || line[x] == "'") {
+                if (!isString) {
+                    isString = true;
+                    justSetString = true;
+                }
+            }
+            if (!isString) {
+                if (line[x] == '/' && line[x + 1] == '/' || line[x] == '#') {
+                    isComment = true;
+                }
+                if (!isComment) {
+
+                    if (wordBreakChars.indexOf(line[x]) != -1) {
+                        isKeyword = false;
+                        isNumber = false;
+                    }
+                    if (x == 0 || wordBreakChars.indexOf(line[(x - 1) < 0 ? 0 : x - 1]) != -1) {
+                        var str = ''
+                        let i = x;
+                        while (i < line.length && wordBreakChars.indexOf(line[x]) == -1) {
+                            str += line[i];
+                            if (keywords.indexOf(str) != -1) {
+                                isKeyword = true;
+                                break;
+                            } else if (!isNaN(str) || str == 'true' || str == 'false') {
+                                isNumber = true;
+                            }
+                            i++;
+                        }
+                    }
+                }
+            }
+            if (isString) {
+                engine.fillForeground('green');
+            } else if (isComment) {
+                engine.fillForeground('blue');
+            } else if (isKeyword) {
+                engine.fillForeground('magenta');
+            } else if (isNumber) {
+                engine.fillForeground('yellow');
+            } else if (cyanChars.indexOf(line[x]) != -1) {
+                engine.fillForeground('cyan');
+            } else {
+                engine.fillForeground('white');
+            }
+            engine.drawPoint(x + sideBarWidth, y, line[x]);
+
+            if ((line[x] == '"' || line[x] == "'") && !justSetString) {
+                if (isString) isString = false;
+            }
+
+
+        }
+    } else {
+        engine.fillForeground("white");
+        engine.drawText(sideBarWidth, y, line);
+    }
+}
+
 function saveFile() {
     var string = lines.join('\n');
     fs.writeFile(filename, string, (err) => {
         if (err) throw err;
         modified = false;
+        notSavedWarning = false;
         engine.render();
     });
 }
