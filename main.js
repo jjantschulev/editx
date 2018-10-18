@@ -2,41 +2,30 @@
 const fs = require('fs');
 const engine = require('./engine.js');
 const Notification = require('./notification.js');
+const syntax = require("./syntax.js");
 
 const sideBarWidth = 5;
 const navHeight = 2;
 process.argv = process.argv.slice(2);
-var filename = process.argv[0];
+let filename = process.argv[0];
 if (!fs.existsSync(filename)) {
     console.warn('Error! That file does not exist.');
     process.exit();
 }
-// Get file extension
-var syntax = '';
-var codeExtensions = "js java cs ts json"
-codeExtensions = codeExtensions.split(' ');
-var fileExtension = filename.indexOf('.') != -1 ? filename.slice(filename.indexOf('.') + 1) : "";
-if (codeExtensions.indexOf(fileExtension) != -1) syntax = fileExtension;
 
-var notSavedWarning = false;
-var modified = false;
-var scrollY = 0,
-    scrollX = 0;
-
-var cursorPosX = 0;
-var cursorPosY = 0;
-var wantedCursorPosX = 0;
-
+let cursorPosX = 0;
+let cursorPosY = 0;
+let wantedCursorPosX = 0;
 
 typeableChars = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()-=_+[]{}|;':\",.<>/?`~\\"
 typeableChars = typeableChars.split('');
 
-var notification;
+let notification;
 
-var file = fs.readFileSync(filename);
-var lines = file.toString().split("\n");
+let file = fs.readFileSync(filename);
+let lines = file.toString().split("\n");
 
-var copyBuffer = "";
+let copyBuffer = "";
 
 function setup() {
     notification = new Notification.Notification(engine);
@@ -61,20 +50,20 @@ const draw = function () {
 
     // File Rendering
     for (let y = navHeight; y < engine.height; y++) {
-        var index = y - navHeight + scrollY;
-        var lineNum = index + 1;
+        let index = y - navHeight + scrollY;
+        let lineNum = index + 1;
         if (index < lines.length) {
-            engine.fillForeground('yellow');
-            engine.drawText((sideBarWidth - 1) - lineNum.toString().length, y, lineNum.toString());
+            engine.fillForeground('lightblack');
+            engine.drawText((sideBarWidth - 1) - lineNum.toString().length - scrollX, y, lineNum.toString());
             engine.fillForeground('white');
-            var line = lines[index].toString();
-            renderLine(line, y);
+            let line = lines[index].toString();
+            renderLine2(line, y);
         }
     }
 
     notification.show(engine);
 
-    engine.setCursor(cursorPosX + sideBarWidth, cursorPosY - scrollY + navHeight);
+    engine.setCursor(cursorPosX + sideBarWidth - scrollX, cursorPosY - scrollY + navHeight);
     // engine.drawPoint(cursorPosX + sideBarWidth, cursorPosY - scrollY + navHeight, engine.BOX);
 }
 
@@ -96,7 +85,7 @@ function keyPressed(key) {
 
     // Special Keys
     if (key.name == 'tab' && !key.ctrl) {
-        var remainder = cursorPosX % 4;
+        let remainder = cursorPosX % 4;
         remainder = 4 - remainder == 0 ? 4 : 4 - remainder;
         for (let i = 0; i < remainder; i++) {
             typeChar(' ');
@@ -142,7 +131,7 @@ function keyPressed(key) {
         }
         if (key.name == 'q') {
             if (cursorPosY > 0) {
-                var temp = lines[cursorPosY - 1];
+                let temp = lines[cursorPosY - 1];
                 lines[cursorPosY - 1] = lines[cursorPosY];
                 lines[cursorPosY] = temp;
                 moveCursorY(-1);
@@ -152,7 +141,7 @@ function keyPressed(key) {
         }
         if (key.name == 'a') {
             if (cursorPosY < lines.length - 1) {
-                var temp = lines[cursorPosY + 1];
+                let temp = lines[cursorPosY + 1];
                 lines[cursorPosY + 1] = lines[cursorPosY];
                 lines[cursorPosY] = temp;
                 moveCursorY(1);
@@ -182,7 +171,7 @@ function typeChar(char) {
 }
 
 function returnKey() {
-    var newStr = lines[cursorPosY].slice(cursorPosX);
+    let newStr = lines[cursorPosY].slice(cursorPosX);
     lines[cursorPosY] = lines[cursorPosY].slice(0, cursorPosX)
     lines.splice(cursorPosY + 1, 0, newStr);
     moveCursorX(1);
@@ -229,8 +218,9 @@ function moveCursorX(dir) {
         }
     }
     wantedCursorPosX = cursorPosX;
-    engine.setCursor(cursorPosX + sideBarWidth, cursorPosY - scrollY + navHeight);
+    engine.setCursor(cursorPosX + sideBarWidth - scrollX, cursorPosY - scrollY + navHeight);
     updateScrollY();
+    updateScrollX();
 }
 
 function moveCursorY(dir) {
@@ -247,8 +237,9 @@ function moveCursorY(dir) {
     if (cursorPosX > lines[cursorPosY].length) {
         cursorPosX = lines[cursorPosY].length;
     }
-    engine.setCursor(cursorPosX + sideBarWidth, cursorPosY - scrollY + navHeight);
+    engine.setCursor(cursorPosX + sideBarWidth - scrollX, cursorPosY - scrollY + navHeight);
     updateScrollY();
+    updateScrollX();
 }
 
 function updateScrollY() {
@@ -263,86 +254,50 @@ function updateScrollY() {
 
 }
 
-function renderLine(line, y) {
-    if (syntax != '') {
-        let isString = false;
-        let isNumber = false;
-        let stringStartChar = '';
-        let isKeyword = false;
-        let isComment = false;
-        let numbers = "1234567890."
-        let keywords = "var if else function let for throw => while"
-        keywords = keywords.split(' ');
-        let wordBreakChars = '() =!+;,';
-        wordBreakChars = wordBreakChars.split('');
-        let cyanChars = '=+-/*<>%!'
-        cyanChars = cyanChars.split('');
+function updateScrollX() {
+    if (lines[cursorPosY].length > engine.width - 2 - sideBarWidth) {
+        if (cursorPosX - scrollX > engine.width - 3 - sideBarWidth) {
+            scrollX = (cursorPosX - scrollX) - (engine.width - 3 - sideBarWidth);
+            engine.render();
+        }
+        if (cursorPosX - scrollX < 2 && scrollX > 0) {
+            scrollX--;
+            engine.render();
+        }
+    } else if (scrollX > 0) {
+        scrollX = 0;
+        engine.render();
+    }
+}
 
-        for (let x = 0; x < line.length; x++) {
-
-            let justSetString = false;
-            if (line[x] == '"' || line[x] == "'") {
-                if (!isString) {
-                    isString = true;
-                    stringStartChar = line[x];
-                    justSetString = true;
-                }
-            }
-            if (!isString) {
-                if (line[x] == '/' && line[x + 1] == '/' || line[x] == '#') {
-                    isComment = true;
-                }
-                if (!isComment) {
-
-                    if (wordBreakChars.indexOf(line[x]) != -1) {
-                        isKeyword = false;
-                        isNumber = false;
-                    }
-                    if (x == 0 || wordBreakChars.indexOf(line[(x - 1) < 0 ? 0 : x - 1]) != -1) {
-                        var str = ''
-                        let i = x;
-                        while (i < line.length && wordBreakChars.indexOf(line[x]) == -1) {
-                            str += line[i];
-                            if (keywords.indexOf(str) != -1) {
-                                isKeyword = true;
-                                break;
-                            } else if (!isNaN(str) || str == 'true' || str == 'false' || str == 'undefined' || str == "null") {
-                                isNumber = true;
-                            }
-                            i++;
-                        }
-                    }
-                }
-            }
-            if (isString) {
-                engine.fillForeground('green');
-            } else if (isComment) {
-                engine.fillForeground('blue');
-            } else if (isKeyword) {
-                engine.fillForeground('magenta');
-            } else if (isNumber) {
-                engine.fillForeground('yellow');
-            } else if (cyanChars.indexOf(line[x]) != -1) {
-                engine.fillForeground('cyan');
+function renderLine2(line, y) {
+    let renderStr = syntax.computeSyntax(line);
+    let currentColour = 'white';
+    engine.fillForeground(currentColour);
+    let offset = 0;
+    let stack = 0;
+    for (let x = 0; x < renderStr.length; x++) {
+        let col = syntax.getColourFromSyntaxEscapeStr(renderStr[x]);
+        if (col != '') {
+            if (col == 'white') {
+                stack--;
             } else {
+                stack++;
+            }
+            if (stack == 1 && col != 'white') {
+                engine.fillForeground(col);
+            } else if (stack == 0) {
                 engine.fillForeground('white');
             }
-            engine.drawPoint(x + sideBarWidth, y, line[x]);
-
-            if ((line[x] == stringStartChar) && !justSetString) {
-                if (isString) isString = false;
-            }
-
-
+            offset++;
+        } else {
+            engine.drawPoint(x + sideBarWidth - scrollX - offset, y, renderStr[x]);
         }
-    } else {
-        engine.fillForeground("white");
-        engine.drawText(sideBarWidth, y, line);
     }
 }
 
 function saveFile() {
-    var string = lines.join('\n');
+    let string = lines.join('\n');
     fs.writeFile(filename, string, (err) => {
         if (err) throw err;
         modified = false;
