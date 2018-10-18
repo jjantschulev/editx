@@ -276,6 +276,7 @@ var cursorX = 0, cursorY = 0;
 funcs.setCursor = function (x, y) {
     cursorX = x;
     cursorY = y;
+    process.stdout.write('\033[' + (cursorY + 1) + ';' + (cursorX + 1) + 'f'); // move cursor to desired location
 }
 
 funcs.render = () => {

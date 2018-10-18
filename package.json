@@ -1,6 +1,6 @@
 {
   "name": "editx",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Simple but powerful text and code editor for the console.",
   "main": "main.js",
   "scripts": {

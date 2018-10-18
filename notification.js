@@ -12,6 +12,7 @@ module.exports.Notification = function (e) {
         this.message = ' ' + str + ' ';
         if (this.timeOut != undefined) clearTimeout(this.timeOut);
         this.timeOut = setTimeout(() => { this.hide(this.engine); }, time);
+        this.engine.render();
     }
 
     this.show = function () {

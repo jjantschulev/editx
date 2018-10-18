@@ -28,7 +28,7 @@ var cursorPosY = 0;
 var wantedCursorPosX = 0;
 
 
-typeableChars = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()-=_+[]{}|;':\",.<>/?`~"
+typeableChars = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()-=_+[]{}|;':\",.<>/?`~\\"
 typeableChars = typeableChars.split('');
 
 var notification;
@@ -116,7 +116,7 @@ function keyPressed(key) {
         exit();
     }
     if (key.ctrl) {
-        if (key.ctrl && key.name == 's') {
+        if (key.name == 's') {
             saveFile();
         }
         if (key.name == 'c') {
@@ -127,6 +127,7 @@ function keyPressed(key) {
             lines.splice(cursorPosY, 0, copyBuffer);
             moveCursorY(1);
             modified = true;
+            engine.render();
         }
         if (key.name == 'x') {
             copyBuffer = lines[cursorPosY];
@@ -137,6 +138,7 @@ function keyPressed(key) {
             moveCursorY(-1);
             notification.notify("Line cut", 1000);
             modified = true;
+            engine.render();
         }
         if (key.name == 'q') {
             if (cursorPosY > 0) {
@@ -145,6 +147,7 @@ function keyPressed(key) {
                 lines[cursorPosY] = temp;
                 moveCursorY(-1);
                 modified = true;
+                engine.render();
             }
         }
         if (key.name == 'a') {
@@ -154,6 +157,7 @@ function keyPressed(key) {
                 lines[cursorPosY] = temp;
                 moveCursorY(1);
                 modified = true;
+                engine.render();
             }
         }
         if (key.name == 'e') {
@@ -166,7 +170,6 @@ function keyPressed(key) {
     if (typeableChars.indexOf(key.sequence) != -1) {
         typeChar(key.sequence);
     }
-    engine.render();
 }
 
 
@@ -174,6 +177,7 @@ function typeChar(char) {
     lineStr = lines[cursorPosY];
     lines[cursorPosY] = lineStr.slice(0, cursorPosX) + char + lineStr.slice(cursorPosX);
     moveCursorX(1);
+    engine.render();
     modified = true;
 }
 
@@ -183,6 +187,7 @@ function returnKey() {
     lines.splice(cursorPosY + 1, 0, newStr);
     moveCursorX(1);
     modified = true;
+    engine.render();
 }
 
 function deleteKey() {
@@ -200,6 +205,7 @@ function deleteKey() {
         moveCursorX(-1);
         modified = true;
     }
+    engine.render();
 }
 
 function moveCursorX(dir) {
@@ -223,6 +229,7 @@ function moveCursorX(dir) {
         }
     }
     wantedCursorPosX = cursorPosX;
+    engine.setCursor(cursorPosX + sideBarWidth, cursorPosY - scrollY + navHeight);
     updateScrollY();
 }
 
@@ -240,15 +247,18 @@ function moveCursorY(dir) {
     if (cursorPosX > lines[cursorPosY].length) {
         cursorPosX = lines[cursorPosY].length;
     }
+    engine.setCursor(cursorPosX + sideBarWidth, cursorPosY - scrollY + navHeight);
     updateScrollY();
 }
 
 function updateScrollY() {
     if (cursorPosY - scrollY > engine.height - 3 - navHeight) {
         scrollY++;
+        engine.render();
     }
     if (cursorPosY - scrollY < 2 && scrollY > 0) {
         scrollY--;
+        engine.render();
     }
 
 }
@@ -257,6 +267,7 @@ function renderLine(line, y) {
     if (syntax != '') {
         let isString = false;
         let isNumber = false;
+        let stringStartChar = '';
         let isKeyword = false;
         let isComment = false;
         let numbers = "1234567890."
@@ -273,6 +284,7 @@ function renderLine(line, y) {
             if (line[x] == '"' || line[x] == "'") {
                 if (!isString) {
                     isString = true;
+                    stringStartChar = line[x];
                     justSetString = true;
                 }
             }
@@ -317,7 +329,7 @@ function renderLine(line, y) {
             }
             engine.drawPoint(x + sideBarWidth, y, line[x]);
 
-            if ((line[x] == '"' || line[x] == "'") && !justSetString) {
+            if ((line[x] == stringStartChar) && !justSetString) {
                 if (isString) isString = false;
             }
 
