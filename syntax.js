@@ -13,7 +13,7 @@ const languageExpressions = {
         specialReg2: /\b(const|null|undefined|true|false)(?=[^\w])/g,
         specialJsGlobReg: /\b(document|window|Array|String|Object|Math|Number|JSON|\$)(?=[^\w])/g,
         specialJsReg: /\b(getElementsBy(TagName|ClassName|Name)|getElementById|typeof|instanceof)(?=[^\w])/g,
-        specialMethReg: /\.(lastIndexOf|parse|substring|slice|splice|exit|add|sub|indexOf|match|replace|toString|floor|ciel|round|push)(?=[^\w])/g,
+        specialMethReg: /\.(lastIndexOf|parse|substring|slice|splice|exit|add|sub|indexOf|match|replace|toString|floor|ciel|round|push)(?=\()/g,
         specialMathReg: /(\+|\-|\*|\/|\:|\!|\<|\>|\=|\%)/g,
         specialCommentReg: /(\/\*.*\*\/)/g,
         inlineCommentReg: /(\/\/.*)/g

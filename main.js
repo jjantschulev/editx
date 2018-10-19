@@ -13,8 +13,12 @@ if (!fs.existsSync(filename)) {
     process.exit();
 }
 
-let cursorPosX = 0;
-let cursorPosY = 0;
+
+let modified = false;
+let notSavedWarning = false;
+
+let scrollY = 0, scrollX = 0;
+let cursorPosX = 0, cursorPosY = 0;
 let wantedCursorPosX = 0;
 
 typeableChars = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()-=_+[]{}|;':\",.<>/?`~\\"
@@ -22,14 +26,23 @@ typeableChars = typeableChars.split('');
 
 let notification;
 
-let file = fs.readFileSync(filename);
-let lines = file.toString().split("\n");
+let file;
+let lines = [];
 
 let copyBuffer = "";
 
 function setup() {
+    loadFile();
     notification = new Notification.Notification(engine);
     engine.render();
+}
+
+function loadFile() {
+    let lastDotIndex = filename.lastIndexOf(".");
+    let fileExtension = lastDotIndex == -1 ? '' : filename.slice(lastDotIndex + 1);
+    syntax.setLanguage(fileExtension);
+    file = fs.readFileSync(filename);
+    lines = file.toString().split("\n");
 }
 
 const draw = function () {
@@ -57,7 +70,7 @@ const draw = function () {
             engine.drawText((sideBarWidth - 1) - lineNum.toString().length - scrollX, y, lineNum.toString());
             engine.fillForeground('white');
             let line = lines[index].toString();
-            renderLine2(line, y);
+            renderLine(line, y);
         }
     }
 
@@ -270,7 +283,7 @@ function updateScrollX() {
     }
 }
 
-function renderLine2(line, y) {
+function renderLine(line, y) {
     let renderStr = syntax.computeSyntax(line);
     let currentColour = 'white';
     engine.fillForeground(currentColour);
